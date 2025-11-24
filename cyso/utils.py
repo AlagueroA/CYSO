@@ -1,7 +1,7 @@
 # src/utils.py
 
 import numpy as np
-
+import scipy.constants as sc
 
 ## USEFUL CONSTANTS
 sigma_to_FWHM = 2.0 * np.sqrt(2.0 * np.log(2))
@@ -250,27 +250,26 @@ def prepare_PSF(PSF, FoV_PSF, image, crop=False, npix_crop=None, norm_method='su
         
         #get PSF center with max(PSF)
         #new_cx_psf, new_cy_psf = np.unravel_index(PSF.argmax(), PSF.shape)[-2], np.unravel_index(PSF.argmax(), PSF.shape)[-1]
-        new_cx_psf, new_cy_psf = PSF.shape[-2]//2 + PSF.shape[-2]%2, PSF.shape[-1]//2 + PSF.shape[-1]%2
-        print('PSF center is found in coordinate :', new_cx_psf, new_cy_psf)
+        cx_psf, cy_psf = PSF.shape[-2]//2 + PSF.shape[-2]%2, PSF.shape[-1]//2 + PSF.shape[-1]%2
+        print('PSF center is found in coordinate :', cx_psf, cy_psf)
         
         #adjust crop_factor
-        offcrop_x, offcrop_y = npix_crop[0]//2, npix_crop[1]//2
-        rest_x, rest_y = npix_crop[0]%2, npix_crop[1]%2
+        offcrop_x, offcrop_y = self.scene_nx//2, self.scene_nx//2  #image is square
+        rest_x, rest_y = self.scene_nx%2, self.scene_nx%2
         
         #Centering
-        x_min = int(round( new_cx_psf -  offcrop_x ))
-        x_max = int(round( new_cx_psf +  offcrop_x+rest_x ))
-        y_min = int(round( new_cy_psf -  offcrop_y ))
-        y_max = int(round( new_cy_psf +  offcrop_y+rest_y ))
+        x_min = int(round( cx_psf -  offcrop_x ))
+        x_max = int(round( cx_psf +  offcrop_x+rest_x ))
+        y_min = int(round( cy_psf -  offcrop_y ))
+        y_max = int(round( cy_psf +  offcrop_y+rest_y ))
     
         if x_min < 0 or y_min < 0 :
-            print('\nWARNING : Cropping too harsh, may not work')
+            print('WARNING : Cropping too harsh, may not work')
         
         #Slicing
-        if PSF_list :
-            new_PSF = np.zeros((PSF.shape[0], x_max-x_min, y_max-y_min))
-            for ind_psf in range(len(PSF)):
-                new_PSF[ind_psf] = PSF[ind_psf, x_min:x_max, y_min:y_max]
+        temp = np.zeros((self.image.shape[0], x_max-x_min, y_max-y_min))
+        for frame in range(len(PSF)):
+            new_PSF[ind_psf] = PSF[ind_psf, x_min:x_max, y_min:y_max]
         else :
             PSF = PSF[x_min:x_max, y_min:y_max]
         PSF = copy.deepcopy(new_PSF)
