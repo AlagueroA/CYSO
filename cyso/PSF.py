@@ -210,7 +210,8 @@ class PSF:
             self.nx = self.image.shape[-2]
             self.ny = self.image.shape[-1]
             print('New PSF dimensions after cropping : ('+str(self.nx)+', '+str(self.ny)+')')
-        
+        else:
+            print('No need to crop the PSF')
 
         
     def select(self):

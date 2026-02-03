@@ -2,6 +2,7 @@
 
 import numpy as np
 import scipy.constants as sc
+from astropy.coordinates import SkyCoord
 
 ## USEFUL CONSTANTS
 sigma_to_FWHM = 2.0 * np.sqrt(2.0 * np.log(2))
@@ -134,7 +135,7 @@ def ref_flux(wavelength):
     return F0
 
 
-def para_angle(nb_im, exp_time, lat, dec):
+def para_angle(nb_im, exp_time, lat, radec):
     '''
     Returns a list of parallactic angles from the system's coordinates and the exposure time.
     
@@ -147,39 +148,41 @@ def para_angle(nb_im, exp_time, lat, dec):
     lat : float
         Lattitude of the system in [deg]
 
-    dec : float
-        Declination of the system in [deg]
+    radec : SkyCoord object
+        Astronomical coordinates of the system
 
     ##Returns
     pa : list of floats
         List of parallactic angles in [deg]
     '''
 
-    #conversion
-    lat = lat*np.pi/180
-    dec = dec*np.pi/180
+    #
+    radec_ = SkyCoord(radec, frame='icrs')
+    
+    #conversion in rad
+    lat = lat * np.pi/180
+    ra  = radec_.ra.degree * np.pi/180
+    dec = radec_.dec.degree * np.pi/180
+    
+    #time sequence (hour angle), centred on zenith passage at the middle of the sequence
+    ha = np.linspace(-exp_time*nb_im//2, exp_time*(nb_im//2+nb_im%2), nb_im)  #in s
+    ha = ha / (3600/15) #in h
+    ha = ha * np.pi/180 #in rad
 
-    #hour angle in rad
-    ha_min = (-nb_im/2 * exp_time) /240 * np.pi/180
-    ha_max = (nb_im/2 * exp_time) /240 * np.pi/180
-    ha = np.linspace(ha_min, ha_max, nb_im)
+    #parallactic angle - find more at https://en.wikipedia.org/wiki/Parallactic_angle
+    pa = np.zeros_like(ha)
+    for frame in range(nb_im):
+        num_tanq = np.sin(ha[frame])
+        denum_tanq = np.cos(dec)*np.tan(lat) - np.sin(dec)*np.cos(ha[frame])
 
-    #parallactic angle
-    pa = []
-    for ind in range(nb_im):
-        #tan_q = np.sin(ha[ind]) / (np.cos(dec)*np.tan(lat) - np.sin(dec)*np.cos(ha[ind]))
-        #q = np.arctan(tan_q)
-        num_tanq = np.sin(ha[ind])
-        denum_tanq = np.cos(dec)*np.tan(lat) - np.sin(dec)*np.cos(ha[ind])
-
-        q = np.arctan2(denum_tanq, num_tanq)   #why is it working ?
+        q = np.arctan2(num_tanq, denum_tanq)
         q = q * 180/np.pi
 
         #q in [-pi; pi]
         if q > 90 :
             q -= 180
 
-        pa.append(q)
+        pa[frame] = q
 
     return(pa)
 

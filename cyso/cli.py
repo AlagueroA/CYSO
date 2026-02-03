@@ -6,7 +6,6 @@ from pathlib import Path
 import importlib.resources as resources
 
 
-
 def main():
 
     print('')

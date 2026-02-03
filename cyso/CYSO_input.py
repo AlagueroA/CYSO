@@ -1,6 +1,5 @@
 # src/CYSO_input.py
 
-
 ## IMAGE
 path_image = ''
 mcfost = False
@@ -15,8 +14,8 @@ unit = None         #brightness unit, put None if you use mcfost or radmc3d
 distance = 140   #pc
 
 path_pa = ''     #path to parallactic angles fits file, in [xxx], let empty to create one
-lat = 70          #lattitude in [deg], if you let path_pa empty
-dec = 70          #declination in [deg], if you let path_pa empty
+radec = '14h08m10.155s -41d23m52.57s'  #ra dec of the object in hhmmss and ddmmss in the icrs frame, used if you let path_pa empty
+lat = -24.6280555          #lattitude of the observer in [deg], used if you let path_pa empty
 
 
 

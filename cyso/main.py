@@ -60,8 +60,8 @@ def run_main():
     unit                 = ui['unit']
     distance             = ui['distance']
     path_pa              = ui['path_pa']
+    radec                = ui['radec']
     lat                  = ui['lat']
-    dec                  = ui['dec']
     coro                 = ui['coro']
     tel_diam             = ui['tel_diam']
     tel_surface          = ui['tel_surface']
@@ -170,8 +170,8 @@ def run_main():
                         PSF_offaxisRDI=PSF_offaxisRDI,
                         ADI=ADI,
                         path_pa=path_pa,
+                        radec=radec,
                         lat=lat,
-                        dec=dec,
                         export_fits=export_fits,
                         )
 

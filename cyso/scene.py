@@ -105,7 +105,7 @@ class Image:
 
         #radmc3D
         elif radmc3d:
-            pass
+            raise ValueError('radmc3d compatibility is not yet implemented.')
         
         #general case
         else:

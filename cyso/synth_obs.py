@@ -4,6 +4,7 @@ from astropy.convolution import convolve_fft
 import os
 import copy
 import random
+from vip_hci.preproc import frame_rotate
 
 from .utils import *
 
@@ -26,8 +27,8 @@ class SynthObs:
                  PSF_offaxisRDI=None,
                  ADI=False,
                  path_pa=None,
-                 lat=70,
-                 dec=70,
+                 radec = SkyCoord('14h08m10.155s -41d23m52.57s', frame='icrs'),
+                 lat=-24.6280555,
                  export_fits=False,
     ):
         '''Ah bah là il va falloir décrire toutes ces variables...'''
@@ -66,7 +67,7 @@ class SynthObs:
         self.ADI = ADI
         self.path_pa = path_pa
         self.lat = lat
-        self.dec = dec
+        self.radec = radec
         
         #Products
         self.sequence = np.zeros((self.nb_frames, self.nx, self.ny))
@@ -86,8 +87,8 @@ class SynthObs:
         '''Get the list of parallactic angles. Either from an external file of calculating it.'''
         if self.ADI:
             if self.path_pa == '':
-                print('Calculating the list of parallactic angles for a latitude of', self.lat, 'and declination of', self.dec)
-                self.list_pa = utils.para_angle(nb_im=self.nb_frames, exp_time=self.exp_time, lat=self.lat, dec=self.dec)
+                print('Calculating the list of parallactic angles for an object with (RA,dec):', self.radec, 'observed at a latitude of', self.lat, 'deg')
+                self.list_pa = para_angle(nb_im=self.nb_frames, exp_time=self.exp_time, lat=self.lat, radec=self.radec)
             else:
                 print('Opening the list of parallactic angles at:', path_pa)
                 try:
@@ -418,6 +419,8 @@ def convolution(I,PSF_on,PSF_off,freq,telescope_surface,exp_time,RON,nb_frames,n
 
     #
     print('Convolution...')
+    if ADI:
+        print('... and rotation')
     
     I_star = copy.deepcopy(np.max(I))  #assuming the intensity of the central star is the one of the brightest pixel
  
@@ -437,7 +440,6 @@ def convolution(I,PSF_on,PSF_off,freq,telescope_surface,exp_time,RON,nb_frames,n
 
         #rotation for further ADI
         if ADI :
-            print('... and rotation')
             I = frame_rotate(I_mem, angle_list[frame], imlib='opencv')
 
         #convolution with the psf
@@ -506,7 +508,7 @@ def RDI(I_list,I_list_RDI,nb_frames,nx,ny):
     '''
 
     #
-    print('\n -- Reference Differential Imaging --')
+    print('Reference Differential Imaging')
 
     #checks
     #if len(I_list) != len(I_list_RDI) :
@@ -531,11 +533,11 @@ def ADI(I_list, angle_list,nb_frames,nx,ny):
     
     angle_list :
     '''
-    print('\n -- Angular Differential Imaging --')
+    print('Angular Differential Imaging')
     
     #Reference image built from median
     I_subm = np.zeros((nb_frames,nx,ny))
-    I_subm = np.zeros((nb_frames,nx,ny))
+    I_subm_derot = np.zeros((nb_frames,nx,ny))
     I_ref = np.median(I_list, axis=0)
     for frame in range(nb_frames):
         #refine subtraction - TBD
