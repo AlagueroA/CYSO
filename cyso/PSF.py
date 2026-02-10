@@ -243,17 +243,18 @@ class PSF:
         '''Normalise to the total flux'''
         
         if self.norm_cst is None:
-            self.norm_cst = 1
-        print('Normalizing the PSF with a factor', self.norm_cst)
-        
-        for frame in range(self.nb_frames):
-            self.image[frame,:,:] = self.norm_cst * self.image[frame,:,:] / np.sum(self.image[frame,:,:])
+            print('NOT normalizing the PSF')
+            
+        else:
+            print('Normalizing the PSF with a factor', self.norm_cst)
+            for frame in range(self.nb_frames):
+                self.image[frame,:,:] = self.norm_cst * self.image[frame,:,:] / np.sum(self.image[frame,:,:])
 
 
 
 
 def need_replication(PSF_onaxis,PSF_offaxis):
-    '''If needed, makes two PSFs with the same number of frames by if nb_frames = 1 for one of them
+    '''If needed, makes two PSFs with the same number of frames if nb_frames = 1 for one of them.
     
     #args
     PSF_onaxis : PSF.PSF object

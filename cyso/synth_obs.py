@@ -451,7 +451,10 @@ def convolution(I,PSF_on,PSF_off,freq,telescope_surface,exp_time,RON,nb_frames,n
         #convolution with the psf
         I_offaxis = np.zeros((nx,ny))
         if PSF_off is not None:
-            I_offaxis = convolve_fft(I, PSF_off[frame,:,:])
+            I_offaxis = convolve_fft(I, PSF_off[frame,:,:],
+                                    normalize_kernel=False,
+                                    nan_treatment='fill',
+                                    fill_value=0)
 
         #construction of the coronagraphic image
         I_onaxis = np.zeros((nx,ny))
