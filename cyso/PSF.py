@@ -94,9 +94,15 @@ class PSF:
             raise ValueError('Input on-axis PSF has only dimension', nb_dim)
         
         elif nb_dim == 2:
-            temp = np.expand_dims(self.image, axis=0)
+            if self.RDI:
+                temp_timedim_size = 2*self.nb_frames  #make a sequence 2 times longer for the code below to work and take the end of the sequence
+            else:
+                temp_timedim_size = self.nb_frames
+            temp = np.zeros((temp_timedim_size,self.image.shape[0],self.image.shape[1]))
+            for frame in range(self.nb_frames): #duplicate the PSF as many times as requested
+                temp[frame,:,:] = copy.deepcopy(self.image)
             self.image = copy.deepcopy(temp)
-            
+
         elif nb_dim >= 4:
             temp = np.squeeze(self.image)
             nb_dim_temp = len(temp.shape)
@@ -213,7 +219,7 @@ class PSF:
         else:
             print('No need to crop the PSF')
 
-        
+
     def select(self):
         '''according to the number of frames'''
         
@@ -221,9 +227,12 @@ class PSF:
             raise ValueError('You are trying to use more frames than there are in the sequence:', self.nb_frames_tot, 'vs', self.nb_frames )
             
         if self.RDI: #RDI, select frames at the end of the sequence
-            nb_frames_RDI = self.nb_frames_tot - self.nb_frames
-            if nb_frames_RDI < self.nb_frames:
-                raise ValueError('Sequence not long enough for RDI, try to use less frames.')
+            if self.nb_frames == 1:
+               nb_frames_RDI = 0  #take the first image because there is only one
+            else:
+                nb_frames_RDI = self.nb_frames_tot - self.nb_frames
+                if nb_frames_RDI < self.nb_frames:
+                    raise ValueError('Sequence not long enough for RDI, try to use less frames.')
             temp = self.image[nb_frames_RDI:,:,:]   #check that it has the same length science psf
         else: #science, select at the beginning of the sequence
             temp = self.image[:self.nb_frames,:,:]
