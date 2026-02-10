@@ -30,6 +30,7 @@ class SynthObs:
                  radec = SkyCoord('14h08m10.155s -41d23m52.57s', frame='icrs'),
                  lat=-24.6280555,
                  export_fits=False,
+                 path_export=None
     ):
         '''Ah bah là il va falloir décrire toutes ces variables...'''
     
@@ -75,6 +76,7 @@ class SynthObs:
         if self.RDI:
             self.sequence_RDI = np.zeros((self.nb_frames, self.nx, self.ny))
         self.export_fits = export_fits
+        self.path_export = path_export
 
         #Do the things
         self.get_pa()
@@ -255,15 +257,19 @@ class SynthObs:
         hdul = fits.HDUList([primary_hdu])
 
         #export
-        name = 'synthobs'
-        dir = self.Image.dir
+        if self.path_export == '':
+            name = 'synthobs'
+            dir = os.getcwd()
+            output_path = os.path.join(dir, name+'.fits')
+        else:
+            output_path = self.path_export
         counter = 0
-        candidate = os.path.join(dir, name+'.fits')
-        while os.path.exists(candidate):
+        while os.path.exists(output_path):  #add suffix if path already exists
             counter += 1
-            candidate = os.path.join(dir, name+'_'+str(counter)+'.fits')
-        hdul.writeto(candidate, overwrite=False)
-        print('FITS CREATED :', candidate)
+            split_candidate = output_path.split('.fits')
+            output_path = split_candidate[0]+'_'+str(counter)+'.fits'
+        hdul.writeto(output_path, overwrite=False)
+        print('FITS CREATED :', output_path)
 
 
 #

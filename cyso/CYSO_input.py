@@ -54,3 +54,4 @@ ADI = False
 
 ## EXPORT
 export_fits = True
+path_export = ''    #full path of the exported file, let empty string = in the working dir

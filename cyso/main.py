@@ -38,6 +38,7 @@ from .synth_obs import *
 #path_PSF_offaxis_RDI = ui.path_PSF_offaxis_RDI
 #ADI                  = ui.ADI
 #export_fits          = ui.export_fits
+#path_export          = ui.path_export
 
 
 def run_main():
@@ -82,6 +83,7 @@ def run_main():
     path_PSF_offaxis_RDI = ui['path_PSF_offaxis_RDI']
     ADI                  = ui['ADI']
     export_fits          = ui['export_fits']
+    path_export          = ui['path_export']
     
     
     #
@@ -173,5 +175,6 @@ def run_main():
                         radec=radec,
                         lat=lat,
                         export_fits=export_fits,
+                        path_export=path_export,
                         )
 
