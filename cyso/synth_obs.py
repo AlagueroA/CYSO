@@ -92,7 +92,7 @@ class SynthObs:
                 print('Calculating the list of parallactic angles for an object with (RA,dec):', self.radec, 'observed at a latitude of', self.lat, 'deg')
                 self.list_pa = para_angle(nb_im=self.nb_frames, exp_time=self.exp_time, lat=self.lat, radec=self.radec)
             else:
-                print('Opening the list of parallactic angles at:', path_pa)
+                print('Opening the list of parallactic angles at:', self.path_pa)
                 try:
                     with fits.open(self.path_pa) as hdul:
                         self.list_pa = hdul[0].data
