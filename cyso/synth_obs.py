@@ -266,7 +266,10 @@ class SynthObs:
         counter = 0
         while os.path.exists(output_path):  #add suffix if path already exists
             counter += 1
-            split_candidate = output_path.split('.fits')
+            if counter > 1:
+                split_candidate = output_path.split('_'+str(counter-1)+'.fits')
+            else:
+                split_candidate = output_path.split('.fits')
             output_path = split_candidate[0]+'_'+str(counter)+'.fits'
         hdul.writeto(output_path, overwrite=False)
         print('FITS CREATED :', output_path)
