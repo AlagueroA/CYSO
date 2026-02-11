@@ -4,7 +4,6 @@ from astropy.convolution import convolve_fft
 import os
 import copy
 import random
-from vip_hci.preproc import frame_rotate
 
 from .utils import *
 
@@ -38,6 +37,8 @@ class SynthObs:
         self.Image = Image
         self.nx = Image.nx
         self.ny = Image.ny
+        self.cx = Image.cx
+        self.cy = Image.cy
         self.wl = Image.wl
         self.freq = Image.freq
         self.pixelscale = Image.pixelscale
@@ -136,6 +137,8 @@ class SynthObs:
                     nb_frames = self.nb_frames,
                     nx = self.nx,
                     ny = self.ny,
+                    cx = self.cx,
+                    cy = self.cy,
                     coro = self.coro/1000, #in arcsec
                     pixelscale = self.pixelscale,
                     ADI = self.ADI,
@@ -151,6 +154,8 @@ class SynthObs:
                         nb_frames = self.nb_frames,
                         nx = self.nx,
                         ny = self.ny,
+                        cx = self.cx,
+                        cy = self.cy,
                         coro = self.coro/1000, #in arcsec
                         pixelscale = self.pixelscale,
                         ADI = self.ADI,
@@ -208,7 +213,9 @@ class SynthObs:
                 angle_list=self.list_pa,
                 nb_frames=self.nb_frames,
                 nx=self.nx,
-                ny=self.ny)
+                ny=self.ny,
+                cx=self.cx,
+                cy=self.cy)
 
         #collapse the cube
         if self.combine_method is not None:
@@ -390,7 +397,7 @@ def apply_readout_noise(I_list,freq,telescope_surface,exp_time,RON,nb_frames,nx,
         
         
 
-def convolution(I,PSF_on,PSF_off,freq,telescope_surface,exp_time,RON,nb_frames,nx,ny,coro,pixelscale,ADI,angle_list):
+def convolution(I,PSF_on,PSF_off,freq,telescope_surface,exp_time,RON,nb_frames,nx,ny,cx,cy,coro,pixelscale,ADI,angle_list):
     '''
     Take a 2d-single array, mask the central parts of it, convolve it with a PSF sequence and finally add the coronagraph diffraction. Following PSF.need_replication, the on-axis and off-axis PSF have the same nb_frames.
 
@@ -449,7 +456,7 @@ def convolution(I,PSF_on,PSF_off,freq,telescope_surface,exp_time,RON,nb_frames,n
 
         #rotation for further ADI
         if ADI :
-            I = frame_rotate(I_mem, angle_list[frame], imlib='opencv')
+            I = frame_rotate(I_mem, angle_list[frame], cx, cy)
 
         #convolution with the psf
         I_offaxis = np.zeros((nx,ny))
@@ -539,7 +546,7 @@ def RDI(I_list,I_list_RDI,nb_frames,nx,ny):
 
 
 
-def ADI(I_list, angle_list,nb_frames,nx,ny):
+def ADI(I_list, angle_list,nb_frames,nx,ny,cx,cy):
     '''
     I_list :
     
@@ -559,6 +566,6 @@ def ADI(I_list, angle_list,nb_frames,nx,ny):
         I_subm[frame,:,:] = I_list[frame] - alpha*I_ref
             
         #Derotation
-        I_subm_derot[frame,:,:] = frame_rotate(I_subm[frame,:,:], -angle_list[frame])
+        I_subm_derot[frame,:,:] = frame_rotate(I_subm[frame,:,:], -angle_list[frame], cx, cy)
 
     return I_subm_derot

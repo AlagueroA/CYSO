@@ -3,6 +3,7 @@
 import numpy as np
 import scipy.constants as sc
 from astropy.coordinates import SkyCoord
+from cv2 import getRotationMatrix2D,warpAffine,BORDER_CONSTANT,INTER_LANCZOS4
 
 ## USEFUL CONSTANTS
 sigma_to_FWHM = 2.0 * np.sqrt(2.0 * np.log(2))
@@ -297,3 +298,12 @@ def find_secondmax(arr):
     position = np.argwhere(arr == second_max_val)
     
     return position
+
+
+def frame_rotate(arr,angle,cx,cy):
+    '''rotate a 2D array from an angle using open-cv'''
+
+    M = getRotationMatrix2D((cx, cy), angle, 1)
+    array_rot = warpAffine(arr.astype(np.float32), M, (arr.shape[0], arr.shape[1]), flags=INTER_LANCZOS4, borderMode=BORDER_CONSTANT)
+
+    return array_rot
