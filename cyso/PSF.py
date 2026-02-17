@@ -100,8 +100,8 @@ class PSF:
                 temp_timedim_size = self.nb_frames
             temp = np.zeros((temp_timedim_size,self.image.shape[0],self.image.shape[1]))
             for frame in range(self.nb_frames): #duplicate the PSF as many times as requested
-                temp[frame,:,:] = copy.deepcopy(self.image)
-            self.image = copy.deepcopy(temp)
+                temp[frame,:,:] = self.image
+            self.image = temp
 
         elif nb_dim >= 4:
             temp = np.squeeze(self.image)
@@ -111,13 +111,13 @@ class PSF:
             elif nb_dim_temp == 2:
                 print('Your PSF was squeezed and extended again')
                 temp = np.expand_dims(temp, axis=0)
-                self.image = copy.deepcopy(temp)
+                self.image = temp
             elif nb_dim_temp == 3:
                 print('Your PSF was squeezed')
-                self.image = copy.deepcopy(temp)
+                self.image = temp
             else:
                 print('Taking the last 3 dimensions of your input array as the PSF')
-                self.image = copy.deepcopy(temp[...,:,:,:])
+                self.image = temp[...,:,:,:]
         
         self.nb_frames_tot = self.image.shape[0]
 
@@ -135,14 +135,14 @@ class PSF:
 
             square_img = np.zeros((self.nb_frames,size,size))
             for frame in range(self.nb_frames):
-                square_img[frame:,:,:] = np.pad(
+                square_img[frame,:,:] = np.pad(
                     self.image[frame,:,:],
                     pad_width=((top, bottom), (left, right)),
                     mode='constant',
                     constant_values=0
                     )
             
-            self.image = copy.deepcopy(square_img)
+            self.image = square_img
             if self.nx > self.ny:
                 self.ny = self.nx
             else:
@@ -171,7 +171,7 @@ class PSF:
             if self.onaxis and new_nx < self.scene_nx:
                 raise ValueError('On-axis PSF is too small compated to the image.')
             
-            self.image = copy.deepcopy(new_PSF)
+            self.image = new_PSF
             self.nx = new_nx
             self.ny = new_nx  #PSF is square
             self.pixelscale = self.scene_pixelscale
@@ -211,7 +211,7 @@ class PSF:
             temp = np.zeros((self.nb_frames, x_max-x_min, y_max-y_min))
             for frame in range(self.nb_frames):
                 temp[frame] = self.image[frame, x_min:x_max, y_min:y_max]
-            self.image = copy.deepcopy(temp)
+            self.image = temp
         
             self.nx = self.image.shape[-2]
             self.ny = self.image.shape[-1]
@@ -236,7 +236,7 @@ class PSF:
             temp = self.image[nb_frames_RDI:,:,:]   #check that it has the same length science psf
         else: #science, select at the beginning of the sequence
             temp = self.image[:self.nb_frames,:,:]
-        self.image = copy.deepcopy(temp)
+        self.image = temp
 
 
     def normalise(self):
@@ -283,7 +283,7 @@ def need_replication(PSF_onaxis,PSF_offaxis):
             temp = np.zeros(nb2, PSF_onaxis.nx, PSF_onaxis.ny)
             for frame in range(nb2):
                 temp[frame,:,:] = PSF_onaxis.image[0,:,:]
-            PSF_onaxis.image = copy.deepcopy(temp)
+            PSF_onaxis.image = temp
             PSF_onaxis.nb_frames = nb2
             
         if nb2 == 1:
@@ -291,7 +291,7 @@ def need_replication(PSF_onaxis,PSF_offaxis):
             temp = np.zeros(nb1, PSF_offaxis.nx, PSF_offaxis.ny)
             for frame in range(nb1):
                 temp[frame,:,:] = PSF_offaxis.image[0,:,:]
-            PSF_offaxis.image     = copy.deepcopy(temp)
+            PSF_offaxis.image     = temp
             PSF_offaxis.nb_frames = nb1
         
         return PSF_onaxis, PSF_offaxis
