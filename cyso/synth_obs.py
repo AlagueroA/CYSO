@@ -504,7 +504,6 @@ def recombine(I_list,mode,nb_frames):
         return I_synth
 
     elif mode.lower() == 'median' :
-        print('Collapsing the cube. Mode '+mode.lower())
         I_synth = np.median(I_list, axis=0)
         return I_synth
 
