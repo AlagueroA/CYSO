@@ -1,6 +1,6 @@
 # src/scene.py
-print('These are complains of pymcfost:')
-from pymcfost.parameters import Params, find_parameter_file
+#print('These are complains of pymcfost:')
+#from pymcfost.parameters import Params, find_parameter_file
 from astropy.io import fits
 import numpy as np
 import scipy.constants as sc
@@ -51,10 +51,10 @@ class Image:
         if mcfost and radmc3d:
             raise ValueError('Choose your side between mcfost and radmc3d, it cannot be both...')
             
-        # mcfost
-        if mcfost:
-            para_file = find_parameter_file(dir)
-            self.mcfostP = Params(para_file)
+        # mcfost - a bit useless to do that + impose a dependency on pymcfost
+        #if mcfost:
+        #    para_file = find_parameter_file(dir)
+        #    self.mcfostP = Params(para_file)
 
         # Read model results
         self._read()
