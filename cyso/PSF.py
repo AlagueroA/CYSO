@@ -169,7 +169,7 @@ class PSF:
             new_nx = new_PSF.shape[-1]
             print('New PSF dimensions : ('+str(new_nx)+', '+str(new_nx)+')')
             if self.onaxis and new_nx < self.scene_nx:
-                raise ValueError('On-axis PSF is too small compated to the image.')
+                raise ValueError('On-axis PSF is too small compared to the image.')
             
             self.image = new_PSF
             self.nx = new_nx
