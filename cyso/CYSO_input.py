@@ -51,6 +51,10 @@ path_PSF_offaxis_RDI = ''   #let empty to use same as path_PSF_offaxis
 
 ADI = False
 
+PCA = False
+ncomp = 5
+
+rollsub = False
 
 ## EXPORT
 export_fits = True

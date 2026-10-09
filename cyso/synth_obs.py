@@ -4,6 +4,9 @@ from astropy.convolution import convolve_fft
 import os
 import copy
 import random
+from vip_hci.psfsub import pca as pcavip
+from vip_hci.psfsub import roll_sub as rollsubvip
+from cv2 import INTER_LANCZOS4
 
 from .utils import *
 
@@ -28,6 +31,9 @@ class SynthObs:
                  path_pa=None,
                  radec = SkyCoord('14h08m10.155s -41d23m52.57s', frame='icrs'),
                  lat=-24.6280555,
+                 PCA=False,
+                 ncomp=5,
+                 rollsub=False,
                  export_fits=False,
                  path_export=None
     ):
@@ -71,6 +77,16 @@ class SynthObs:
         self.lat = lat
         self.radec = radec
         
+        self.PCA = PCA
+        self.ncomp = ncomp
+        self.fwhm = 1.2*(self.wl*1e-6 / self.tel_diam *180*3600/np.pi) / self.pixelscale
+        
+        self.rollsub = rollsub
+        
+        self.adi_prep = self.ADI or self.PCA or self.rollsub
+        
+        
+        
         #Products
         self.sequence = np.zeros((self.nb_frames, self.nx, self.ny))
         self.synthobs = np.zeros((self.nx, self.ny))    #recombined sequence
@@ -88,7 +104,7 @@ class SynthObs:
     #
     def get_pa(self):
         '''Get the list of parallactic angles. Either from an external file of calculating it.'''
-        if self.ADI:
+        if self.adi_prep:
             if self.path_pa == '':
                 print('Calculating the list of parallactic angles for an object with (RA,dec):', self.radec, 'observed at a latitude of', self.lat, 'deg')
                 self.list_pa = para_angle(nb_im=self.nb_frames, exp_time=self.exp_time, lat=self.lat, radec=self.radec)
@@ -96,7 +112,13 @@ class SynthObs:
                 print('Opening the list of parallactic angles at:', self.path_pa)
                 try:
                     with fits.open(self.path_pa) as hdul:
-                        self.list_pa = hdul[0].data
+                        list_pa_temp = hdul[0].data
+                    if len(list_pa_temp)>self.nb_frames:
+                        self.list_pa = list_pa_temp[:self.nb_frames]
+                    elif len(list_pa_temp)==self.nb_frames:
+                        self.list_pa = list_pa_temp
+                    else:
+                        raise ValueError("You have more nb_frames than parallactic angles: problem.")
                 except OSError:
                     print(f"Cannot open FITS file: {self.file}")
                 except Exception as e:
@@ -141,7 +163,7 @@ class SynthObs:
                     cy = self.cy,
                     coro = self.coro/1000, #in arcsec
                     pixelscale = self.pixelscale,
-                    ADI = self.ADI,
+                    adi_prep = self.adi_prep,
                     angle_list = self.list_pa)
         if self.RDI:
             self.sequence_RDI = convolution(I=self.Image_RDI.image,
@@ -158,7 +180,7 @@ class SynthObs:
                         cy = self.cy,
                         coro = self.coro/1000, #in arcsec
                         pixelscale = self.pixelscale,
-                        ADI = self.ADI,
+                        adi_prep = self.adi_prep,
                         angle_list = self.list_pa)
 
         #photon noise
@@ -216,7 +238,23 @@ class SynthObs:
                 ny=self.ny,
                 cx=self.cx,
                 cy=self.cy)
+                
+        #PCA
+        if self.PCA:
+            self.sequence = PCA(I_list=self.sequence,
+                angle_list=self.list_pa,
+                ncomp=self.ncomp,
+                fwhm=self.fwhm,
+                batch=50,
+                mask=self.coro/1000/self.pixelscale  #px
+                )
 
+        #rollsub
+        if self.rollsub:
+            self.sequence = rollsub(I_list=self.sequence,
+                angle_list=self.list_pa,
+                )
+                
         #collapse the cube
         if self.combine_method is not None:
             self.synthobs = recombine(I_list=self.sequence,
@@ -258,6 +296,10 @@ class SynthObs:
         hdr['COMBINE'] = self.combine_method
         hdr['RDI'] = self.RDI
         hdr['ADI'] = self.ADI
+        hdr['PCA'] = self.PCA
+        hdr['ncomp'] = self.ncomp
+        hdr['rollsub'] = self.rollsub
+        
 
         #
         primary_hdu = fits.PrimaryHDU(self.synthobs, header=hdr)
@@ -397,7 +439,7 @@ def apply_readout_noise(I_list,freq,telescope_surface,exp_time,RON,nb_frames,nx,
         
         
 
-def convolution(I,PSF_on,PSF_off,freq,telescope_surface,exp_time,RON,nb_frames,nx,ny,cx,cy,coro,pixelscale,ADI,angle_list):
+def convolution(I,PSF_on,PSF_off,freq,telescope_surface,exp_time,RON,nb_frames,nx,ny,cx,cy,coro,pixelscale,adi_prep,angle_list):
     '''
     Take a 2d-single array, mask the central parts of it, convolve it with a PSF sequence and finally add the coronagraph diffraction. Following PSF.need_replication, the on-axis and off-axis PSF have the same nb_frames.
 
@@ -435,7 +477,7 @@ def convolution(I,PSF_on,PSF_off,freq,telescope_surface,exp_time,RON,nb_frames,n
 
     #
     print('Convolution...')
-    if ADI:
+    if adi_prep:
         print('... and rotation')
     
     I_star = copy.deepcopy(np.max(I))  #assuming the intensity of the central star is the one of the brightest pixel
@@ -455,7 +497,7 @@ def convolution(I,PSF_on,PSF_off,freq,telescope_surface,exp_time,RON,nb_frames,n
     for frame in range(nb_frames):
 
         #rotation for further ADI
-        if ADI :
+        if adi_prep :
             I = frame_rotate(I_mem, angle_list[frame], cx, cy)
 
         #convolution with the psf
@@ -494,8 +536,9 @@ def recombine(I_list,mode,nb_frames):
     The array that results the recombination
     '''
     
-    if nb_frames == 1 :    #if the cube is a single image
+    if nb_frames == 1 or len(I_list.shape)==2 :    #if the cube is a single image
         print('The cube is a single image, no need of collapsing.')
+        return I_list
     else:
         print('Collapsing the cube. Mode '+mode.lower())
         
@@ -568,3 +611,26 @@ def ADI(I_list, angle_list,nb_frames,nx,ny,cx,cy):
         I_subm_derot[frame,:,:] = frame_rotate(I_subm[frame,:,:], -angle_list[frame], cx, cy)
 
     return I_subm_derot
+
+
+
+def PCA(I_list, angle_list, ncomp, fwhm, batch, mask):
+
+    imlib = 'opencv'
+    interpolation = 'lanczos4'  #None
+    
+    I_final = pcavip(cube=I_list, angle_list=angle_list, ncomp=ncomp, fwhm=fwhm, batch=batch, mask_center_px=mask, imlib=imlib, interpolation=interpolation, full_output=False)
+    
+    return I_final
+
+
+
+def rollsub(I_list, angle_list):
+
+    mode = 'median'
+    imlib = 'opencv'
+    interpolation = 'lanczos4'  #None
+
+    I_final = rollsubvip(cube=I_list, angle_list=angle_list, mode=mode, imlib=imlib, interpolation=interpolation, full_output=False)
+    
+    return I_final

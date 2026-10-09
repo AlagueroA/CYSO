@@ -82,6 +82,9 @@ def run_main():
     path_PSF_onaxis_RDI  = ui['path_PSF_onaxis_RDI']
     path_PSF_offaxis_RDI = ui['path_PSF_offaxis_RDI']
     ADI                  = ui['ADI']
+    PCA                  = ui['PCA']
+    ncomp                = ui['ncomp']
+    rollsub              = ui['rollsub']
     export_fits          = ui['export_fits']
     path_export          = ui['path_export']
     
@@ -174,6 +177,9 @@ def run_main():
                         path_pa=path_pa,
                         radec=radec,
                         lat=lat,
+                        PCA=PCA,
+                        ncomp=ncomp,
+                        rollsub=rollsub,
                         export_fits=export_fits,
                         path_export=path_export,
                         )
