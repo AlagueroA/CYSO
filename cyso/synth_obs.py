@@ -84,7 +84,10 @@ class SynthObs:
         self.rollsub = rollsub
         
         self.adi_prep = self.ADI or self.PCA or self.rollsub
-        
+        print(f"ADI      = {self.ADI!r}")
+        print(f"PCA      = {self.PCA!r}")
+        print(f"rollsub  = {self.rollsub!r}")
+        print(f"adi_prep = {self.adi_prep!r}")
         
         
         #Products
@@ -223,7 +226,7 @@ class SynthObs:
 
         #RDI
         if self.RDI:
-            self.sequence = RDI(I_list=self.sequence,
+            self.sequence = ppRDI(I_list=self.sequence,
                 I_list_RDI=self.sequence_RDI,
                 nb_frames=self.nb_frames,
                 nx=self.nx,
@@ -231,7 +234,7 @@ class SynthObs:
 
         #ADI
         if self.ADI:
-            self.sequence = ADI(I_list=self.sequence,
+            self.sequence = ppADI(I_list=self.sequence,
                 angle_list=self.list_pa,
                 nb_frames=self.nb_frames,
                 nx=self.nx,
@@ -241,7 +244,7 @@ class SynthObs:
                 
         #PCA
         if self.PCA:
-            self.sequence = PCA(I_list=self.sequence,
+            self.sequence = ppPCA(I_list=self.sequence,
                 angle_list=self.list_pa,
                 ncomp=self.ncomp,
                 fwhm=self.fwhm,
@@ -251,7 +254,7 @@ class SynthObs:
 
         #rollsub
         if self.rollsub:
-            self.sequence = rollsub(I_list=self.sequence,
+            self.sequence = pprollsub(I_list=self.sequence,
                 angle_list=self.list_pa,
                 )
                 
@@ -554,7 +557,7 @@ def recombine(I_list,mode,nb_frames):
         raise AttributeError('please select a valid combination method : None, mean/average, median')
 
 
-def RDI(I_list,I_list_RDI,nb_frames,nx,ny):
+def ppRDI(I_list,I_list_RDI,nb_frames,nx,ny):
     '''
     Subtract a reference sequence from an image sequence and returns the result. Both have to be already convolved. (RDI ready data)
 
@@ -588,7 +591,7 @@ def RDI(I_list,I_list_RDI,nb_frames,nx,ny):
 
 
 
-def ADI(I_list, angle_list,nb_frames,nx,ny,cx,cy):
+def ppADI(I_list, angle_list,nb_frames,nx,ny,cx,cy):
     '''
     I_list :
     
@@ -614,7 +617,7 @@ def ADI(I_list, angle_list,nb_frames,nx,ny,cx,cy):
 
 
 
-def PCA(I_list, angle_list, ncomp, fwhm, batch, mask):
+def ppPCA(I_list, angle_list, ncomp, fwhm, batch, mask):
 
     imlib = 'opencv'
     interpolation = 'lanczos4'  #None
@@ -625,7 +628,7 @@ def PCA(I_list, angle_list, ncomp, fwhm, batch, mask):
 
 
 
-def rollsub(I_list, angle_list):
+def pprollsub(I_list, angle_list):
 
     mode = 'median'
     imlib = 'opencv'
